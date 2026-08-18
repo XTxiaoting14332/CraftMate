@@ -13,8 +13,12 @@ import { startThinkingFill, stopThinkingFill } from './humanize.js'
 const MAX_HISTORY_TOKENS = 24_000 // 除 system 外的历史 token 预算, 超出裁剪最旧的工具往返(比固定条数更能保留长前缀)
 
 // 惯性执行安全名单: 只有"错了也无害/可纠正"的工具才允许绕过模型本地先执行。
-// 聊天/丢弃/交易/交互等有社交后果的一律不猜。
-const SAFE_HABIT_TOOLS = new Set(['find', 'collect', 'goto', 'nearby', 'status', 'scan', 'eat', 'inventory', 'look_at', 'wait'])
+// 聊天/丢弃/交易/交互等有社交后果的一律不猜; goto 会移动角色位置(有空间后果), 绝不猜。
+const SAFE_HABIT_TOOLS = new Set(['find', 'collect', 'nearby', 'status', 'scan', 'eat', 'inventory', 'look_at', 'wait'])
+
+// 模型刚执行这些工具时, 说明它正按自己的计划行动(移动/建造/放置/采集/对话),
+// 不需要惯性"猜下一步"——猜了反而打乱计划。跳过本轮惯性执行。
+const INTENT_TOOLS = new Set(['goto', 'place', 'build', 'plan', 'chat', 'whisper', 'attack', 'dig', 'pillar', 'collect', 'craft', 'use_item', 'interact_entity', 'activate_block', 'container', 'villager'])
 
 const AGENT_RULES = `
 
@@ -118,9 +122,11 @@ export function stopAgent() {
 
 // 惯性执行链: 模型刚执行完调用后, 按学到的习惯把高置信度的下一步先跑掉。
 // 任何事件(聊天/受击等)出现立即停, 把控制权交回模型; 连锁有上限, 不会无限自动驾驶。
-async function runHabitChain(cfg, preSeq = null) {
+async function runHabitChain(cfg, preSeq = null, recentToolNames = []) {
   if (cfg.habits === false) return
   if (observeUntil > Date.now()) return // 观察期内不惯性执行(会绕过模型直接干活)
+  // 模型本轮正在按计划行动(移动/建造/放置/采集等): 不猜下一步, 避免打乱计划
+  if (recentToolNames.some((n) => INTENT_TOOLS.has(n))) return
   const minConf = Number(cfg.habit_min_confidence ?? 0.7)
   const maxChain = Number(cfg.habit_max_chain ?? 2)
   const ns = currentNs()
@@ -536,6 +542,7 @@ async function agentLoop(overrides) {
         const sideChannelPromise = longAction && running && cfg.chat_side !== false
           ? chatSideChannel(cfg, messages, preSeq, Date.now() + (cfg.side_chat_timeout_ms ?? 45000))
           : null
+        const recentToolNames = msg.tool_calls.map((tc) => tc.function?.name).filter(Boolean)
         for (const tc of msg.tool_calls) {
           if (!running) break
           let args = {}
@@ -605,7 +612,8 @@ async function agentLoop(overrides) {
         }
         maybeInjectSnapshot()
         // 惯性执行: 按历史习惯在模型思考前先执行高置信度的下一步(动作与推理重叠, 消除"动一下停一阵")
-        await runHabitChain(cfg, preSeq)
+        // 模型本轮在按计划行动(INTENT_TOOLS)时跳过, 避免惯性打乱它的行动
+        await runHabitChain(cfg, preSeq, recentToolNames)
         maybeInjectSnapshot()
       } else {
         // 模型没有调用工具: 替它待机(相当于自动 wait), 把等待结果带回下一轮。
