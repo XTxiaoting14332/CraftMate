@@ -473,14 +473,22 @@ export async function eatFood(bot, itemName) {
     const items = findInvItems(bot, itemName)
     if (!items.length) throw new Error(`物品栏里没有「${itemName}」。`)
     target = items[0]
-  } else if (isFoodItem(bot.heldItem, bot.registry)) {
+  } else if (bot.heldItem && isFoodItem(bot.heldItem, bot.registry)) {
     target = bot.heldItem
   } else {
     target = bot.inventory.items().find((it) => isFoodItem(it, bot.registry))
     if (!target) throw new Error('物品栏里没有任何可食用的食物。')
   }
+  // 手持不同才换; equip 后 mineflayer 的 heldItem 可能异步更新, 等一拍确认
   if (bot.heldItem?.name !== target.name || bot.heldItem?.count !== target.count) {
     await bot.equip(target, 'hand')
+    // 等 heldItem 更新(1.21 下 equip 后 set_slot 包有延迟); 按物品名判断
+    for (let i = 0; i < 20 && !(bot.heldItem && bot.heldItem.name === target.name); i++) {
+      await sleep(100)
+    }
+  }
+  if (!bot.heldItem) {
+    throw new Error(`装备食物失败: 尝试拿取「${target.name}」但手上还是空的。背包物品可能被服务器锁定/插件保护, 或该物品不在快捷栏且快捷栏满了。`)
   }
   await bot.consume()
   return { ate: target.name, food_level: bot.entity?.food, note: '进食完成。' }
