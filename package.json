@@ -1,0 +1,28 @@
+{
+  "name": "craftmate",
+  "version": "0.1.0",
+  "description": "Minecraft AI bot player runtime and MCP server with autonomous survival instincts, custom personas, and low-latency actions.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "craftmate": "src/index.js",
+    "minecraft-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "standalone": "MC_MCP=0 node src/index.js",
+    "smoke": "node test/smoke.js",
+    "test": "node test/smoke.js && node test/actions-sim.js && node test/building-sim.js && node test/drop-patrol-sim.js && node test/context-sim.js && node test/defense-sim.js && node test/container-sim.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "canvas": "^3.2.3",
+    "mineflayer": "^4.20.0",
+    "mineflayer-pathfinder": "^2.4.5",
+    "prismarine-viewer": "^1.33.0",
+    "vec3": "^0.1.10"
+  }
+}
