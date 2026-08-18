@@ -49,7 +49,7 @@ export function dropPatrolStatus() {
 }
 
 function tick() {
-  if (!timer || state.bot !== botRef || !botRef?.entity || botRef.entity.health <= 0) return
+  if (!timer || state.bot !== botRef || !botRef?.entity || botRef.health <= 0) return
   if (state.defense?.active || state.task || state.containerWindow || busy) return
   if (Date.now() < nextScanAt) return
   void scanDropsOnce(botRef, config)

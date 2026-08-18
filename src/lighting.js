@@ -78,7 +78,7 @@ async function maybePlaceTorch(bot) {
   if (Date.now() - lastPlaceAt < COOLDOWN_MS) return
   if (Date.now() - lastFailAt < COOLDOWN_MS) return
   if (state.defense?.active || state.task || state.containerWindow) return
-  if (!bot.entity || bot.entity.health <= 0 || !bot.entity.onGround) return
+  if (!bot.entity || bot.health <= 0 || !bot.entity.onGround) return
 
   const level = currentLight(bot)
   if (level == null || level >= DARK_AT) return

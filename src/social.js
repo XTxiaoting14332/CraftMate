@@ -35,7 +35,7 @@ export function socialStatus() {
 }
 
 function tick() {
-  if (!timer || state.bot !== botRef || !botRef?.entity || botRef.entity.health <= 0) return
+  if (!timer || state.bot !== botRef || !botRef?.entity || botRef.health <= 0) return
   // 只在真正空闲时提示(有任务/战斗/开箱时不打扰模型)
   if (state.defense?.active || state.task || state.containerWindow) return
   void scanOnce(botRef)

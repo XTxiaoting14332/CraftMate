@@ -43,8 +43,8 @@ function statusPayload() {
             y: Math.floor(bot.entity.position.y),
             z: Math.floor(bot.entity.position.z),
           },
-          health: Math.round(bot.entity.health ?? 20),
-          food: bot.entity.food ?? 20,
+          health: Math.round(bot.health ?? 20),
+          food: bot.food ?? 20,
           version: bot.version ?? null,
         }
       : null,
@@ -81,8 +81,8 @@ async function route(req, res, url) {
         self: {
           position: { x: Math.floor(e.position.x), y: Math.floor(e.position.y), z: Math.floor(e.position.z) },
           yaw: e.yaw,
-          health: Math.round(e.health ?? 20),
-          food: e.food ?? 20,
+          health: Math.round(bot.health ?? 20),
+          food: bot.food ?? 20,
           held: bot.heldItem?.name ?? null,
         },
         scan: scanTerrain(bot, 10),

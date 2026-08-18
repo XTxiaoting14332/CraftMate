@@ -318,12 +318,13 @@ function wireEvents(bot, options) {
     }
   })
   bot.on('health', () => {
-    const h = bot.entity?.health
+    // mineflayer: 玩家自己的生命走 bot.health(update_health 包), bot.entity.health 一直是 undefined
+    const h = bot.health
     if (h != null) {
       if (state.lastHealth != null && h < state.lastHealth) {
         state.lastDamagedAt = Date.now()
         if (state.sessionStats) state.sessionStats.damagedCount += 1
-        pushEvent('damaged', { health: Math.round(h), food: bot.entity?.food })
+        pushEvent('damaged', { health: Math.round(h), food: bot.food })
       }
       state.lastHealth = h
     }

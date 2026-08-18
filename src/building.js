@@ -177,7 +177,7 @@ export async function buildEntries(bot, entries = [], opts = {}, task = {}) {
   let interruptedByChat = false
   for (const entry of ordered) {
     if (chatWake()) { interruptedByChat = true; break }
-    if (task?.cancelled || !bot.entity || bot.entity.health <= 0) {
+    if (task?.cancelled || !bot.entity || bot.health <= 0) {
       entry.status = entry.status || 'cancelled'
       break
     }

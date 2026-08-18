@@ -7,6 +7,8 @@ import { startDefense, stopDefense } from '../src/defense.js'
 function makeBot() {
   const bot = {
     entity: { position: new Vec3(0, 64, 0), health: 20, food: 20 },
+    health: 20, // mineflayer: 玩家生命在 bot.health(update_health 包), entity.health 不更新
+    food: 20,
     entities: {},
     registry: {
       entitiesByName: {
@@ -86,7 +88,7 @@ function check(cond, msg) {
   state.lastDamagedAt = null
   const bot = makeBot()
   addMob(bot, 'skeleton', 'mob', 10, 64, 0)
-  bot.entity.health = 4
+  bot.health = 4
   state.bot = bot
   startDefense(bot, { engageRadius: 8, fleeHp: 6 })
   await sleep(1200)
@@ -105,7 +107,7 @@ function check(cond, msg) {
   state.lastDamagedAt = Date.now()
   const bot = makeBot()
   addMob(bot, 'wolf', 'mob', 2, 64, 0)
-  bot.entity.health = 16
+  bot.health = 16
   state.bot = bot
   startDefense(bot, { engageRadius: 8 })
   await sleep(1200)

@@ -573,8 +573,8 @@ function statusSnapshot() {
         }
       })(),
       facing: facingOf(e.yaw),
-      health: Math.round(e.health ?? 20),
-      food: e.food ?? 20,
+      health: Math.round(bot.health ?? 20), // 玩家生命在 bot.health(update_health 包)
+      food: bot.food ?? 20,
       oxygen: e.oxygen,
       light: (() => { const l = currentLight(bot); return l == null ? undefined : { level: l, label: lightLabel(l) } })(),
       xp_level: bot.experience?.level,
@@ -1273,8 +1273,8 @@ function buildPayload(err, data) {
       const snap = {
         position: fmtPos(pos),
         area,
-        health: Math.round(bot.entity.health ?? 20),
-        food: bot.entity.food ?? 20,
+        health: Math.round(bot.health ?? 20), // mineflayer: 玩家生命在 bot.health(不是 entity.health)
+        food: bot.food ?? 20,
         held: bot.heldItem ? `${itemTitle(bot.heldItem)} ×${bot.heldItem.count}` : '空手',
         light: light == null ? undefined : (light < 7 ? `${light}(暗!记得放光源)` : light),
       }

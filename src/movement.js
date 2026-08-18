@@ -177,7 +177,7 @@ export async function followPlayer(bot, playerName, opts = {}) {
       }
       const e = bot.entities[entity.id]
       if (!e || e.isValid === false) { reason = 'target_lost'; break }
-      if ((bot.entity?.health ?? 20) <= 0) { reason = 'self_dead'; break }
+      if ((bot.health ?? 20) <= 0) { reason = 'self_dead'; break }
       // 靠近时面向目标, 更像真人
       try {
         const d = bot.entity.position.distanceTo(e.position)

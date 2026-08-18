@@ -125,7 +125,7 @@ function nearbyDrops(bot, radius) {
 //     所以既扫机器人周围, 也扫挖掘点周围更大的半径
 //  3) 走不到的掉落物进黑名单: 不让一个 no_path 烧光全部预算; 结束时报告最近一个未拾取位置
 export async function pickupNearbyDrops(bot, { radius = 8, task, timeoutMs = 6000, pauseMs = 200, center = null } = {}) {
-  if (!bot.entity || bot.entity.health <= 0) return { drops_checked: 0, drops_remaining: 0, remaining_nearest: null }
+  if (!bot.entity || bot.health <= 0) return { drops_checked: 0, drops_remaining: 0, remaining_nearest: null }
   const centerPos = center ?? null
   const start = Date.now()
   const deadline = start + Math.max(1500, timeoutMs)
@@ -149,7 +149,7 @@ export async function pickupNearbyDrops(bot, { radius = 8, task, timeoutMs = 600
 
   // 阶段二: 逐个走过去拾取, 直到没有新的或超时
   while (Date.now() < deadline) {
-    if (task?.cancelled || !bot.entity || bot.entity.health <= 0) break
+    if (task?.cancelled || !bot.entity || bot.health <= 0) break
     const list = dropsAround(bot.entity.position, radius)
     const drop = list[0]
     if (!drop) break
@@ -407,7 +407,7 @@ export async function attackEntity(bot, targetName, opts = {}, task) {
       if (task?.cancelled) { reason = 'stopped_by_user'; break }
       const e = bot.entities[entity.id]
       if (!e || e.isValid === false) { reason = 'target_dead_or_gone'; break }
-      if ((bot.entity?.health ?? 20) <= 0) { reason = 'self_dead'; break }
+      if ((bot.health ?? 20) <= 0) { reason = 'self_dead'; break }
       const d = bot.entity.position.distanceTo(e.position)
       await smoothLook(bot, aimJitter(headOf(e)), 220)
       if (d <= 3.2) {
@@ -450,7 +450,7 @@ export async function attackEntity(bot, targetName, opts = {}, task) {
     seconds: round1((Date.now() - start) / 1000),
     target_still_alive: still,
     reason,
-    health: Math.round(bot.entity?.health ?? 20),
+    health: Math.round(bot.health ?? 20),
     loot,
     note: !still && hits > 0
       ? (loot?.drops_remaining ? '目标已击杀; 有掉落物未能拾取(见 new_events/nearby)。' : '目标已击杀并拾取掉落物。')
@@ -491,7 +491,7 @@ export async function eatFood(bot, itemName) {
     throw new Error(`装备食物失败: 尝试拿取「${target.name}」但手上还是空的。背包物品可能被服务器锁定/插件保护, 或该物品不在快捷栏且快捷栏满了。`)
   }
   await bot.consume()
-  return { ate: target.name, food_level: bot.entity?.food, note: '进食完成。' }
+  return { ate: target.name, food_level: bot.food, note: '进食完成。' }
 }
 
 export async function dropItems(bot, itemName, count) {

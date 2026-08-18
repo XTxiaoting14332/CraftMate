@@ -99,10 +99,10 @@ async function runEngage() {
   state.defense.action = 'engage'
   interruptCurrentTask(bot, '遭遇敌对生物')
   const initial = combatTargets(bot, config.engageRadius)
-  pushEvent('auto_defense', { action: 'engage', targets: summarize(initial), health: Math.round(bot.entity.health) })
+  pushEvent('auto_defense', { action: 'engage', targets: summarize(initial), health: Math.round(bot.health) })
   await equipWeapon(bot)
   await sleep(reactionDelayMs()) // 拟人反应时间: 看到→动手之间有延迟, 完美反应是机器人特征
-  if (state.defense.cancelled || state.bot !== bot || !bot.entity || bot.entity.health <= 0) {
+  if (state.defense.cancelled || state.bot !== bot || !bot.entity || bot.health <= 0) {
     state.defense.active = false
     state.defense.action = null
     return
@@ -118,13 +118,13 @@ async function runEngage() {
   let strafeDir = Math.random() < 0.5 ? 'left' : 'right'
   try {
     while (Date.now() - start < ENGAGE_MAX_MS) {
-      if (state.defense.cancelled || state.bot !== bot || !bot.entity || bot.entity.health <= 0) {
+      if (state.defense.cancelled || state.bot !== bot || !bot.entity || bot.health <= 0) {
         reason = state.bot === bot ? 'stopped_by_user' : 'bot_down'
         break
       }
       const targets = combatTargets(bot, config.engageRadius + 4)
       if (!targets.length) { reason = 'cleared'; break }
-      if (bot.entity.health <= config.fleeHp) { reason = 'low_hp_flee'; break }
+      if (bot.health <= config.fleeHp) { reason = 'low_hp_flee'; break }
       const t = targets[0]
       const d = t.distance
       await smoothLook(bot, aimJitter(headOf(t.entity)), 150) // 快速甩头(受惊式) + 瞄准偏移, 比瞬移自然
@@ -173,7 +173,7 @@ async function runEngage() {
     engageCooldownUntil = Date.now() + (reason === 'cleared' ? 1500 : 4000)
   }
 
-  const health = Math.round(bot.entity?.health ?? 0)
+  const health = Math.round(bot.health ?? 0)
   pushEvent('auto_defense', { action: 'engage_end', reason, health, position: bot.entity ? fmtPos(bot.entity.position) : undefined })
   if (reason === 'low_hp_flee') void runFlee()
 }
@@ -185,14 +185,14 @@ async function runFlee() {
   state.defense.action = 'flee'
   const initial = combatTargets(bot, 16)
   interruptCurrentTask(bot, '生命值过低, 撤退', true) // 逃跑优先于一切, 包括 AI 指定的战斗
-  pushEvent('auto_defense', { action: 'flee', from: summarize(initial), health: Math.round(bot.entity.health) })
+  pushEvent('auto_defense', { action: 'flee', from: summarize(initial), health: Math.round(bot.health) })
 
   const start = Date.now()
   let reason = 'escaped'
   try {
     while (Date.now() - start < FLEE_MAX_MS) {
       if (state.defense.cancelled) { reason = 'stopped_by_user'; break }
-      if (state.bot !== bot || !bot.entity || bot.entity.health <= 0) { reason = 'bot_down'; break }
+      if (state.bot !== bot || !bot.entity || bot.health <= 0) { reason = 'bot_down'; break }
       const targets = combatTargets(bot, 16)
       if (!targets.length) break
       try { await pathfindTo(bot, awayPoint(bot, targets.map((x) => x.entity), 24), { range: 2, timeoutMs: 8000 }) } catch { /* ignore */ }
@@ -203,17 +203,17 @@ async function runFlee() {
     state.defense.active = false
     state.defense.action = null
   }
-  pushEvent('auto_defense', { action: 'flee_end', reason, health: Math.round(bot.entity?.health ?? 0), position: bot.entity ? fmtPos(bot.entity.position) : undefined })
+  pushEvent('auto_defense', { action: 'flee_end', reason, health: Math.round(bot.health ?? 0), position: bot.entity ? fmtPos(bot.entity.position) : undefined })
 }
 
 async function runHeal() {
   const bot = botRef
   state.defense.active = true
   state.defense.action = 'heal'
-  pushEvent('auto_defense', { action: 'heal', health: Math.round(bot.entity.health), food: bot.entity.food })
+  pushEvent('auto_defense', { action: 'heal', health: Math.round(bot.health), food: bot.food })
   try {
     await eatFood(bot, null)
-    pushEvent('auto_defense', { action: 'heal_done', food: bot.entity?.food })
+    pushEvent('auto_defense', { action: 'heal_done', food: bot.food })
   } catch (err) {
     healCooldownUntil = Date.now() + 60000 // 没有食物等一分钟再试
     pushEvent('auto_defense', { action: 'heal_failed', error: String(err?.message || err) })
@@ -227,17 +227,17 @@ function tick() {
   if (state.bot !== botRef) { stopDefense(); return }
   const bot = botRef
   if (!enabled || state.defense.active) return
-  if (!bot.entity || !bot.entity.health || bot.entity.health <= 0) return
+  if (!bot.entity || !bot.health || bot.health <= 0) return
   if (Date.now() < engageCooldownUntil) return
 
   const fighting = state.task && (state.task.name === 'fight' || state.task.name === 'attack')
-  const hp = bot.entity.health
+  const hp = bot.health
   const wideTargets = combatTargets(bot, 16)
 
   if (!fighting && hp <= config.fleeHp && wideTargets.length) { void runFlee(); return }
   if (!fighting && wideTargets.some((t) => t.distance <= config.engageRadius)) { void runEngage(); return }
 
-  if (config.autoEat && Date.now() > healCooldownUntil && hp < 14 && (bot.entity.food ?? 20) < 18) {
+  if (config.autoEat && Date.now() > healCooldownUntil && hp < 14 && (bot.food ?? 20) < 18) {
     const has = bot.inventory.items().some((it) => isFoodItem(it, bot.registry))
     if (has) void runHeal()
     else healCooldownUntil = Date.now() + 60000

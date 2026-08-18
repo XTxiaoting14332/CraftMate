@@ -36,7 +36,7 @@ export function stopHumanize() {
 export function startThinkingFill(bot) {
   stopThinkingFill()
   thinkingBotRef = bot
-  if (!bot?.entity || bot.entity.health <= 0) return
+  if (!bot?.entity || bot.health <= 0) return
   thinkingTimer = setInterval(tickThinking, 2200)
   if (typeof thinkingTimer.unref === 'function') thinkingTimer.unref()
 }
@@ -51,7 +51,7 @@ function tickThinking() {
   if (!thinkingBotRef || state.bot !== thinkingBotRef) return
   if (state.defense?.active || state.task || state.containerWindow) return
   const bot = thinkingBotRef
-  if (!bot.entity || bot.entity.health <= 0 || !Number.isFinite(bot.entity.yaw)) return
+  if (!bot.entity || bot.health <= 0 || !Number.isFinite(bot.entity.yaw)) return
   void thinkingGlance(bot)
 }
 
@@ -83,7 +83,7 @@ function tick() {
   // 只在真正空闲时张望: 无任务、无防御、没开箱子、活着
   if (state.defense?.active || state.task || state.containerWindow) return
   const bot = botRef
-  if (!bot.entity || bot.entity.health <= 0) return
+  if (!bot.entity || bot.health <= 0) return
   if (Date.now() < nextGlanceAt) return
   nextGlanceAt = Date.now() + 3000 + Math.random() * 5000 // 每 3~8 秒随机看一眼(更密一点, 掩盖模型思考的停顿)
   void glance(bot)
@@ -293,7 +293,7 @@ export async function wanderAround(bot, seconds, task, opts = {}) {
     while (Date.now() < deadline) {
       if (task?.cancelled) { reason = 'stopped_by_user'; break }
       if (state.bot !== bot) { reason = 'disconnected'; break }
-      if ((bot.entity?.health ?? 20) <= 0) { reason = 'self_dead'; break }
+      if ((bot.health ?? 20) <= 0) { reason = 'self_dead'; break }
       if (opts.interruptOnChat !== false) {
         const wake = eventsSince(startSeq).find((e) => e.type === 'chat' || e.type === 'whisper')
         if (wake) { reason = 'new_chat'; break }
@@ -394,7 +394,7 @@ export async function exploreAround(bot, seconds, task, opts = {}) {
     while (Date.now() < deadline) {
       if (task?.cancelled) { reason = 'stopped_by_user'; break }
       if (state.bot !== bot) { reason = 'disconnected'; break }
-      if ((bot.entity?.health ?? 20) <= 0) { reason = 'self_dead'; break }
+      if ((bot.health ?? 20) <= 0) { reason = 'self_dead'; break }
       if (opts.interruptOnChat !== false) {
         const wake = eventsSince(startSeq).find((e) => e.type === 'chat' || e.type === 'whisper' || e.type === 'window_open')
         if (wake) { reason = 'new_chat'; break }
