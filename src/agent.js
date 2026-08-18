@@ -394,14 +394,18 @@ function summarizeToolResult(name, payload, maxLen) {
       return JSON.stringify({ ...rest, position_count: p.positions.length, _hint: '发现物列表已精简, 详细坐标可再 explore' }).slice(0, maxLen)
     }
     if (name === 'inventory' && (Array.isArray(p.hotbar) || Array.isArray(p.backpack))) {
-      const count = (arr) => (arr ?? []).reduce((s, it) => s + (it.count ?? 1), 0)
+      // 背包必须显示物品名(AI 需要知道自己有什么); 只压缩冗长字段(lore/附魔), 保留 name×count
+      const brief = (arr, max) => (arr ?? []).slice(0, max).map((it) => {
+        if (!it) return null
+        const t = it.title && it.title !== it.name ? `(${it.title})` : ''
+        return `${it.name}${t}×${it.count ?? 1}`
+      }).filter(Boolean)
       return JSON.stringify({
-        held: p.held,
-        hotbar: (p.hotbar ?? []).slice(0, 9).map((it) => `${it.name}×${it.count ?? 1}`),
-        backpack_count: (p.backpack ?? []).length,
-        backpack_total: count(p.backpack),
-        armor: (p.armor ?? []).map((it) => it.name),
-        _hint: '背包物品已精简, 完整列表用 inventory 查看',
+        held: p.held ? (p.held.title && p.held.title !== p.held.name ? `${p.held.name}(${p.held.title})×${p.held.count ?? 1}` : `${p.held.name}×${p.held.count ?? 1}`) : null,
+        hotbar: brief(p.hotbar, 9),
+        backpack: brief(p.backpack, 27),
+        armor: (p.armor ?? []).map((it) => (it ? it.name : null)).filter(Boolean),
+        _hint: '物品只显示 名称×数量, 详细 lore/附魔用 inventory 工具查看',
       }).slice(0, maxLen)
     }
     return JSON.stringify(p).slice(0, maxLen)
